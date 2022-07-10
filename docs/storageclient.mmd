@@ -1,0 +1,63 @@
+stateDiagram-v2
+	state "StorageDealUnknown" as 0
+	state "StorageDealProposalAccepted" as 3
+	state "StorageDealSealing" as 5
+	state "StorageDealActive" as 6
+	state "StorageDealExpired" as 7
+	state "StorageDealSlashed" as 8
+	state "StorageDealFailing" as 9
+	state "StorageDealFundsEnsured" as 10
+	state "StorageDealWaitingForDataRequest" as 11
+	state "StorageDealValidating" as 12
+	state "StorageDealTransferring" as 14
+	state "StorageDealEnsureClientFunds" as 18
+	state "StorageDealClientFunding" as 20
+	state "StorageDealError" as 23
+	3 : On entry runs ValidateDealPublished
+	5 : On entry runs VerifyDealActivated
+	6 : On entry runs WaitForDealCompletion
+	9 : On entry runs FailDeal
+	10 : On entry runs ProposeDeal
+	11 : On entry runs WaitingForDataRequest
+	12 : On entry runs VerifyDealResponse
+	18 : On entry runs EnsureClientFunds
+	20 : On entry runs WaitForFunding
+	[*] --> 0
+	note right of 0
+		The following events are not shown cause they can trigger from any state.
+
+		ClientEventStreamCloseError - transitions state to StorageDealError
+		ClientEventRestart - does not transition state
+	end note
+	0 --> 18 : ClientEventOpen
+	18 --> 20 : ClientEventFundingInitiated
+	18 --> 9 : ClientEventEnsureFundsFailed
+	20 --> 9 : ClientEventEnsureFundsFailed
+	18 --> 10 : ClientEventFundsEnsured
+	20 --> 10 : ClientEventFundsEnsured
+	10 --> 23 : ClientEventWriteProposalFailed
+	10 --> 11 : ClientEventDealProposed
+	11 --> 23 : ClientEventReadResponseFailed
+	12 --> 23 : ClientEventReadResponseFailed
+	11 --> 9 : ClientEventResponseVerificationFailed
+	12 --> 9 : ClientEventResponseVerificationFailed
+	11 --> 9 : ClientEventUnexpectedDealState
+	11 --> 9 : ClientEventDataTransferFailed
+	14 --> 9 : ClientEventDataTransferFailed
+	11 --> 14 : ClientEventDataTransferInitiated
+	11 --> 12 : ClientEventDataTransferComplete
+	14 --> 12 : ClientEventDataTransferComplete
+	12 --> 9 : ClientEventResponseDealDidNotMatch
+	12 --> 9 : ClientEventDealRejected
+	12 --> 3 : ClientEventDealAccepted
+	3 --> 23 : ClientEventDealPublishFailed
+	3 --> 5 : ClientEventDealPublished
+	5 --> 23 : ClientEventDealActivationFailed
+	5 --> 6 : ClientEventDealActivated
+	6 --> 8 : ClientEventDealSlashed
+	6 --> 7 : ClientEventDealExpired
+	6 --> 23 : ClientEventDealCompletionFailed
+	9 --> 23 : ClientEventFailed
+	8 --> [*]
+	7 --> [*]
+	23 --> [*]
