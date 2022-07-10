@@ -15,7 +15,6 @@ import (
 	cborutil "github.com/filecoin-project/go-cbor-util"
 	"github.com/filecoin-project/go-commp-utils/writer"
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-state-types/builtin/v8/market"
 	"github.com/filecoin-project/go-state-types/crypto"
 
 	"github.com/filecoin-project/go-fil-markets/shared"
@@ -96,17 +95,9 @@ func VerifyResponse(ctx context.Context, resp network.SignedResponse, minerAddr 
 
 // LabelField makes a label field for a deal proposal as a multibase encoding
 // of the payload CID (B58BTC for V0, B64 for V1)
-func LabelField(payloadCID cid.Cid) (market.DealLabel, error) {
-	var cidStr string
-	var err error
+func LabelField(payloadCID cid.Cid) (string, error) {
 	if payloadCID.Version() == 0 {
-		cidStr, err = payloadCID.StringOfBase(multibase.Base58BTC)
-	} else {
-		cidStr, err = payloadCID.StringOfBase(multibase.Base64)
+		return payloadCID.StringOfBase(multibase.Base58BTC)
 	}
-	if err != nil {
-		return market.EmptyDealLabel, err
-	}
-
-	return market.NewLabelFromString(cidStr)
+	return payloadCID.StringOfBase(multibase.Base64)
 }

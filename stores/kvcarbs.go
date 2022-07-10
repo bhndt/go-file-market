@@ -690,30 +690,15 @@ func NewReadOnly(backing io.ReaderAt, idx index.Index, opts ...carv2.Option) (*R
 		}
 		if idx == nil {
 			if v2r.Header.HasIndex() {
-				r, err := v2r.IndexReader()
+				idx, err = index.ReadFrom(v2r.IndexReader())
 				if err != nil {
 					return nil, err
 				}
-				idx, err = index.ReadFrom(r)
-				if err != nil {
-					return nil, err
-				}
-			} else {
-				r, err := v2r.DataReader()
-				if err != nil {
-					return nil, err
-				}
-				idx, err = generateIndex(r, opts...)
-				if err != nil {
-					return nil, err
-				}
+			} else if idx, err = generateIndex(v2r.DataReader(), opts...); err != nil {
+				return nil, err
 			}
 		}
-		drBacking, err := v2r.DataReader()
-		if err != nil {
-			return nil, err
-		}
-		b.backing = drBacking
+		b.backing = v2r.DataReader()
 		b.idx = idx
 		return b, nil
 	default:
@@ -863,14 +848,14 @@ func (b *ReadOnly) Get(ctx context.Context, key cid.Cid) (blocks.Block, error) {
 		}
 	})
 	if errors.Is(err, index.ErrNotFound) {
-		return nil, format.ErrNotFound{Cid: key}
+		return nil, blockstore.ErrNotFound
 	} else if err != nil {
 		return nil, err
 	} else if fnErr != nil {
 		return nil, fnErr
 	}
 	if fnData == nil {
-		return nil, format.ErrNotFound{Cid: key}
+		return nil, blockstore.ErrNotFound
 	}
 	return blocks.NewBlockWithCid(fnData, key)
 }
@@ -921,14 +906,14 @@ func (b *ReadOnly) GetSize(ctx context.Context, key cid.Cid) (int, error) {
 		}
 	})
 	if errors.Is(err, index.ErrNotFound) {
-		return -1, format.ErrNotFound{Cid: key}
+		return -1, blockstore.ErrNotFound
 	} else if err != nil {
 		return -1, err
 	} else if fnErr != nil {
 		return -1, fnErr
 	}
 	if fnSize == -1 {
-		return -1, format.ErrNotFound{Cid: key}
+		return -1, blockstore.ErrNotFound
 	}
 	return fnSize, nil
 }

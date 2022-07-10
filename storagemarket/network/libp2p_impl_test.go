@@ -247,12 +247,12 @@ func TestDealStreamSendReceiveDealProposal(t *testing.T) {
 			td := shared_testutil.NewLibp2pTestData(ctx, t)
 			var fromNetwork, toNetwork network.StorageMarketNetwork
 			if data.senderDisabledNew {
-				fromNetwork = network.NewFromLibp2pHost(td.Host1, network.SupportedDealProtocols([]protocol.ID{storagemarket.DealProtocolID110}))
+				fromNetwork = network.NewFromLibp2pHost(td.Host1, network.SupportedDealProtocols([]protocol.ID{storagemarket.OldDealProtocolID}))
 			} else {
 				fromNetwork = network.NewFromLibp2pHost(td.Host1)
 			}
 			if data.receiverDisabledNew {
-				toNetwork = network.NewFromLibp2pHost(td.Host2, network.SupportedDealProtocols([]protocol.ID{storagemarket.DealProtocolID110}))
+				toNetwork = network.NewFromLibp2pHost(td.Host2, network.SupportedDealProtocols([]protocol.ID{storagemarket.OldDealProtocolID}))
 			} else {
 				toNetwork = network.NewFromLibp2pHost(td.Host2)
 			}
@@ -297,12 +297,12 @@ func TestDealStreamSendReceiveDealResponse(t *testing.T) {
 			td := shared_testutil.NewLibp2pTestData(ctx, t)
 			var fromNetwork, toNetwork network.StorageMarketNetwork
 			if data.senderDisabledNew {
-				fromNetwork = network.NewFromLibp2pHost(td.Host1, network.SupportedDealProtocols([]protocol.ID{storagemarket.DealProtocolID110}))
+				fromNetwork = network.NewFromLibp2pHost(td.Host1, network.SupportedDealProtocols([]protocol.ID{storagemarket.OldDealProtocolID}))
 			} else {
 				fromNetwork = network.NewFromLibp2pHost(td.Host1)
 			}
 			if data.receiverDisabledNew {
-				toNetwork = network.NewFromLibp2pHost(td.Host2, network.SupportedDealProtocols([]protocol.ID{storagemarket.DealProtocolID110}))
+				toNetwork = network.NewFromLibp2pHost(td.Host2, network.SupportedDealProtocols([]protocol.ID{storagemarket.OldDealProtocolID}))
 			} else {
 				toNetwork = network.NewFromLibp2pHost(td.Host2)
 			}

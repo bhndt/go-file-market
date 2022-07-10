@@ -25,37 +25,31 @@ func (t *StorageDataTransferVoucher) MarshalCBOR(w io.Writer) error {
 		_, err := w.Write(cbg.CborNull)
 		return err
 	}
-
-	cw := cbg.NewCborWriter(w)
-
-	if _, err := cw.Write(lengthBufStorageDataTransferVoucher); err != nil {
+	if _, err := w.Write(lengthBufStorageDataTransferVoucher); err != nil {
 		return err
 	}
 
+	scratch := make([]byte, 9)
+
 	// t.Proposal (cid.Cid) (struct)
 
-	if err := cbg.WriteCid(cw, t.Proposal); err != nil {
+	if err := cbg.WriteCidBuf(scratch, w, t.Proposal); err != nil {
 		return xerrors.Errorf("failed to write cid field t.Proposal: %w", err)
 	}
 
 	return nil
 }
 
-func (t *StorageDataTransferVoucher) UnmarshalCBOR(r io.Reader) (err error) {
+func (t *StorageDataTransferVoucher) UnmarshalCBOR(r io.Reader) error {
 	*t = StorageDataTransferVoucher{}
 
-	cr := cbg.NewCborReader(r)
+	br := cbg.GetPeeker(r)
+	scratch := make([]byte, 8)
 
-	maj, extra, err := cr.ReadHeader()
+	maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if err == io.EOF {
-			err = io.ErrUnexpectedEOF
-		}
-	}()
-
 	if maj != cbg.MajArray {
 		return fmt.Errorf("cbor input should be of type array")
 	}
@@ -68,7 +62,7 @@ func (t *StorageDataTransferVoucher) UnmarshalCBOR(r io.Reader) (err error) {
 
 	{
 
-		c, err := cbg.ReadCid(cr)
+		c, err := cbg.ReadCid(br)
 		if err != nil {
 			return xerrors.Errorf("failed to read cid field t.Proposal: %w", err)
 		}
