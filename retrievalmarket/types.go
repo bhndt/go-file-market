@@ -17,7 +17,7 @@ import (
 	datatransfer "github.com/filecoin-project/go-data-transfer"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
-	paychtypes "github.com/filecoin-project/go-state-types/builtin/v8/paych"
+	"github.com/filecoin-project/specs-actors/actors/builtin/paych"
 
 	"github.com/filecoin-project/go-fil-markets/piecestore"
 )
@@ -356,7 +356,7 @@ var DealResponseUndefined = DealResponse{}
 type DealPayment struct {
 	ID             DealID
 	PaymentChannel address.Address
-	PaymentVoucher *paychtypes.SignedVoucher
+	PaymentVoucher *paych.SignedVoucher
 }
 
 // Type method makes DealPayment usable as a voucher

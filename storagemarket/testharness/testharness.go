@@ -24,7 +24,7 @@ import (
 	dtgstransport "github.com/filecoin-project/go-data-transfer/transport/graphsync"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
-	"github.com/filecoin-project/go-state-types/builtin"
+	"github.com/filecoin-project/specs-actors/actors/builtin"
 
 	"github.com/filecoin-project/go-fil-markets/shared_testutil"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
@@ -106,7 +106,7 @@ func NewHarnessWithTestData(t *testing.T, td *shared_testutil.Libp2pTestData, de
 	if disableNewDeals {
 		networkOptions = append(networkOptions,
 			network.SupportedAskProtocols([]protocol.ID{storagemarket.OldAskProtocolID}),
-			network.SupportedDealProtocols([]protocol.ID{storagemarket.DealProtocolID110}),
+			network.SupportedDealProtocols([]protocol.ID{storagemarket.OldDealProtocolID}),
 			network.SupportedDealStatusProtocols([]protocol.ID{storagemarket.OldDealStatusProtocolID}),
 		)
 	}

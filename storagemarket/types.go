@@ -13,8 +13,8 @@ import (
 	"github.com/filecoin-project/go-address"
 	datatransfer "github.com/filecoin-project/go-data-transfer"
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-state-types/builtin/v8/market"
 	"github.com/filecoin-project/go-state-types/crypto"
+	"github.com/filecoin-project/specs-actors/actors/builtin/market"
 
 	"github.com/filecoin-project/go-fil-markets/filestore"
 )
@@ -23,10 +23,9 @@ var log = logging.Logger("storagemrkt")
 
 //go:generate cbor-gen-for --map-encoding ClientDeal MinerDeal Balance SignedStorageAsk StorageAsk DataRef ProviderDealState DealStages DealStage Log
 
-// The ID for the libp2p protocol for proposing storage deals.
-const DealProtocolID101 = "/fil/storage/mk/1.0.1"
-const DealProtocolID110 = "/fil/storage/mk/1.1.0"
-const DealProtocolID111 = "/fil/storage/mk/1.1.1"
+// DealProtocolID is the ID for the libp2p protocol for proposing storage deals.
+const OldDealProtocolID = "/fil/storage/mk/1.0.1"
+const DealProtocolID = "/fil/storage/mk/1.1.0"
 
 // AskProtocolID is the ID for the libp2p protocol for querying miners for their current StorageAsk.
 const OldAskProtocolID = "/fil/storage/ask/1.0.1"
@@ -88,11 +87,9 @@ func MaxPieceSize(maxPieceSize abi.PaddedPieceSize) StorageAskOption {
 // StorageAskUndefined represents an empty value for StorageAsk
 var StorageAskUndefined = StorageAsk{}
 
-type ClientDealProposal = market.ClientDealProposal
-
 // MinerDeal is the local state tracked for a deal by a StorageProvider
 type MinerDeal struct {
-	ClientDealProposal
+	market.ClientDealProposal
 	ProposalCid           cid.Cid
 	AddFundsCid           *cid.Cid
 	PublishCid            *cid.Cid

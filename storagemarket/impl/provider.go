@@ -28,7 +28,7 @@ import (
 	"github.com/filecoin-project/go-state-types/exitcode"
 	"github.com/filecoin-project/go-statemachine/fsm"
 	provider "github.com/filecoin-project/index-provider"
-	"github.com/filecoin-project/index-provider/metadata"
+	metadata2 "github.com/filecoin-project/index-provider/metadata"
 
 	"github.com/filecoin-project/go-fil-markets/filestore"
 	"github.com/filecoin-project/go-fil-markets/piecestore"
@@ -153,7 +153,7 @@ func NewProvider(net network.StorageMarketNetwork,
 		&providerDealEnvironment{h},
 		h.dispatch,
 		storageMigrations,
-		versioning.VersionKey("2"),
+		versioning.VersionKey("1"),
 	)
 	if err != nil {
 		return nil, err
@@ -261,13 +261,9 @@ func (p *Provider) receiveDeal(s network.StorageDealStream) error {
 		return xerrors.Errorf("failed to read proposal message: %w", err)
 	}
 
-	if proposal.DealProposal == nil {
-		return xerrors.Errorf("failed to get deal proposal from proposal message")
-	}
-
 	proposalNd, err := cborutil.AsIpld(proposal.DealProposal)
 	if err != nil {
-		return fmt.Errorf("getting deal proposal as IPLD: %w", err)
+		return err
 	}
 
 	// Check if we are already tracking this deal
@@ -276,10 +272,6 @@ func (p *Provider) receiveDeal(s network.StorageDealStream) error {
 		// We are already tracking this deal, for some reason it was re-proposed, perhaps because of a client restart
 		// this is ok, just send a response back.
 		return p.resendProposalResponse(s, &md)
-	}
-
-	if proposal.Piece == nil {
-		return xerrors.Errorf("failed to get proposal piece from proposal message")
 	}
 
 	var path string
@@ -541,17 +533,21 @@ func (p *Provider) AnnounceDealToIndexer(ctx context.Context, proposalCid cid.Ci
 		return xerrors.Errorf("failed getting deal %s: %w", proposalCid, err)
 	}
 
-	mt := metadata.New(&metadata.GraphsyncFilecoinV1{
+	fm := metadata2.GraphsyncFilecoinV1Metadata{
 		PieceCID:      deal.Proposal.PieceCID,
 		FastRetrieval: deal.FastRetrieval,
 		VerifiedDeal:  deal.Proposal.VerifiedDeal,
-	})
+	}
+	dtm, err := fm.ToIndexerMetadata()
+	if err != nil {
+		return fmt.Errorf("failed to encode metadata: %w", err)
+	}
 
 	if err := p.meshCreator.Connect(ctx); err != nil {
 		return fmt.Errorf("cannot publish index record as indexer host failed to connect to the full node: %w", err)
 	}
 
-	annCid, err := p.indexProvider.NotifyPut(ctx, deal.ProposalCid.Bytes(), mt)
+	annCid, err := p.indexProvider.NotifyPut(ctx, deal.ProposalCid.Bytes(), dtm)
 	if err == nil {
 		log.Infow("deal announcement sent to index provider", "advertisementCid", annCid, "shard-key", deal.Proposal.PieceCID,
 			"proposalCid", deal.ProposalCid)
@@ -763,20 +759,13 @@ func (p *Provider) dispatch(eventName fsm.EventName, deal fsm.StateType) {
 	}
 }
 
-func (p *Provider) start(ctx context.Context) (err error) {
-	defer func() {
-		publishErr := p.readyMgr.FireReady(err)
-		if publishErr != nil {
-			if err != nil {
-				log.Warnf("failed to publish storage provider ready event with err %s: %s", err, publishErr)
-			} else {
-				log.Warnf("failed to publish storage provider ready event: %s", publishErr)
-			}
-		}
-	}()
-
+func (p *Provider) start(ctx context.Context) error {
 	// Run datastore and DAG store migrations
 	deals, err := p.runMigrations(ctx)
+	publishErr := p.readyMgr.FireReady(err)
+	if publishErr != nil {
+		log.Warnf("publish storage provider ready event: %s", err.Error())
+	}
 	if err != nil {
 		return err
 	}
@@ -787,7 +776,7 @@ func (p *Provider) start(ctx context.Context) (err error) {
 	}
 
 	// register indexer provider callback now that everything has booted up.
-	p.indexProvider.RegisterMultihashLister(func(ctx context.Context, contextID []byte) (provider.MultihashIterator, error) {
+	p.indexProvider.RegisterCallback(func(ctx context.Context, contextID []byte) (provider.MultihashIterator, error) {
 		proposalCid, err := cid.Cast(contextID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to cast context ID to a cid")
